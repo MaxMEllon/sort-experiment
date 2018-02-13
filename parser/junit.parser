@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+require 'json'
+
+if ARGV.size != 0
+  puts '''
+  This command expected stdin stream. dont hand over arguments.
+
+  Example usage:
+
+    ./gradle test 2>&1 >/dev/null | junit.parser
+
+  '''
+  exit 1
+end
+
+begin
+  result = STDIN.grep(/(SUCCESS|FAILURE)$/).map do |line|
+    {
+      message: line.chomp,
+      status: line.split(' ').last.chomp,
+      target: line.match(/\[(.)*\]/).to_s&.gsub(/\[|\]/, '').chomp,
+    }
+  end
+rescue => e
+  result = {
+    message: e.message,
+    status: 'PARSE ERROR',
+    target: 'NONE',
+  }
+end
+
+puts JSON.dump(result)
